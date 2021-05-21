@@ -2,6 +2,7 @@ const express = require('express');
 
 const app = express();
 const server = require('http').createServer(app);
+// connect socket with server
 const io = require('socket.io')(server, {
     cors: {
         origin: '*',
