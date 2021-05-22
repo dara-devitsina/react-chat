@@ -28,7 +28,7 @@ app.get('/room ids', (req, res) => {
 app.post('/rooms', (req, res) => {
 	const {roomId, usserName} = req.body;
 	if (!rooms.has(roomId)) {
-		// set new room to rooms collection
+		// create new room and set it to rooms collection
 		rooms.set(roomId, new Map([
 			['users', new Map()],
 			['messages', []],
@@ -40,6 +40,17 @@ app.post('/rooms', (req, res) => {
 
 // when user connects we get new variable socket that will store all user info
 io.on('connection', (socket) => {
+	socket.on('ROOM: JOIN', ({ roomId, userName }) => {
+		// connect to a room with respective roomId
+		socket.join(roomId);
+		// save current user to 'users' in current room
+		rooms.get(roomId).get('users').socket(socket.id, userName);
+		// get names of all users
+		const users = rooms.get(roomId).get('users').values();
+		// send socket request to all users in current room (except for yourself) and show all users in current room
+		socket.to(roomId).broadcast.emit('ROOM: JOINED', users);
+	})
+
 	console.log('user connected', socket.id);
 });
 
