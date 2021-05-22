@@ -13,14 +13,30 @@ const io = require('socket.io')(server, {
     }
 });
 
+// parse requests to json format
+app.use(express.json());
 
+// a 'database' to store rooms, users and messages
 const rooms = new Map([
 
 ]);
 
-app.get('/rooms', function(req, res){
+app.get('/room ids', (req, res) => {
 	res.json(rooms);
 });
+
+app.post('/rooms', (req, res) => {
+	const {roomId, usserName} = req.body;
+	if (!rooms.has(roomId)) {
+		// set new room to rooms collection
+		rooms.set(roomId, new Map([
+			['users', new Map()],
+			['messages', []],
+		])
+		);
+	}
+	res.send();
+})
 
 // when user connects we get new variable socket that will store all user info
 io.on('connection', (socket) => {
