@@ -5,6 +5,7 @@ function Chat({ users, messages, userName, roomId, onAddMessage }) {
   const [messageValue, setMessageValue] = React.useState('');
   const messagesRef = React.useRef(null);
 
+  // send socket request 
   const onSendMessage = () => {
     socket.emit('ROOM:NEW_MESSAGE', {
       userName,
