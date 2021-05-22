@@ -44,11 +44,22 @@ io.on('connection', (socket) => {
 		// connect to a room with respective roomId
 		socket.join(roomId);
 		// save current user to 'users' in current room
-		rooms.get(roomId).get('users').socket(socket.id, userName);
+		rooms.get(roomId).get('users').set(socket.id, userName);
 		// get names of all users
-		const users = rooms.get(roomId).get('users').values();
+		const users = [...rooms.get(roomId).get('users').values()];
 		// send socket request to all users in current room (except for yourself) and show all users in current room
 		socket.to(roomId).broadcast.emit('ROOM: JOINED', users);
+	})
+
+	socket.on('disconnected', () => {
+		rooms.forEach((value, roomId) => {
+			// check if user was deleted
+			if(value.get('users'.delete(socket.id))) {
+				const users = [...value.get(roomId).get('users').values()];
+				// send socket request to all users in current room (except for yourself) and show all users in current room
+				socket.to(roomId).broadcast.emit('ROOM: SET_USERS', users);
+			}
+		});
 	})
 
 	console.log('user connected', socket.id);
