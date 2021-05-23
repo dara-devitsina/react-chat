@@ -1,11 +1,10 @@
 import React from 'react';
-import socket from '../socket.js';
+import socket from '../socket';
 
 function Chat({ users, messages, userName, roomId, onAddMessage }) {
   const [messageValue, setMessageValue] = React.useState('');
   const messagesRef = React.useRef(null);
 
-  // send socket request 
   const onSendMessage = () => {
     socket.emit('ROOM:NEW_MESSAGE', {
       userName,
@@ -36,9 +35,9 @@ function Chat({ users, messages, userName, roomId, onAddMessage }) {
         <div ref={messagesRef} className="messages">
           {messages.map((message) => (
             <div className="message">
-              <p>{message['text']}</p>
+              <p>{message.text}</p>
               <div>
-                <span>{message['userName']}</span>
+                <span>{message.userName}</span>
               </div>
             </div>
           ))}

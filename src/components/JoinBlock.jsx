@@ -8,7 +8,7 @@ function JoinBlock({ onLogin }) {
 
 	const onEnter = async () => {
 		if (!roomId || !userName) {
-			return alert('Please enter ypur name and room ID');
+			return alert('Please enter your name and room ID');
 		}
 		const obj = {
 			roomId,

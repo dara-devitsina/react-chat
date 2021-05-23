@@ -1,55 +1,48 @@
 const express = require('express');
-const { isNullOrUndefined } = require('util');
 
 const app = express();
-const server = require('http').createServer(app);
+const server = require('http').Server(app);
 // connect socket to server
-const io = require('socket.io')(server, {
-    cors: {
-        origin: '*',
-        methods: ["GET", "POST"],
-        credentials: true,
-        transports: ['websocket']
-
-    }
-});
+const io = require('socket.io')(server);
 
 // parse json requests
 app.use(express.json());
-// parse string/array requests
-app.use(express.urlencoded({ extended: true }));
 
-// a 'database' to store rooms, users and messages
+// create a 'database' to store rooms, users and messages
 const rooms = new Map();
 
 // when server receives get request to '/rooms', it returns obj with current users and messages
 app.get('/rooms/:id', (req, res) => {
 	const { id: roomId } = req.params;
-	// if there's some users and messages (roomId is present in 'rooms') then send users and messages of current room to client, else send empty arrays for users and messages)
-	const obj = rooms.has(roomId) ? {
-		users: [...rooms.get(roomId).get('users').values()],
-		messages: [...rooms.get(roomId).get('messages')]
-	} : { users: [], messages: []}
+	// if there's some users and messages (roomId is present in 'rooms') send users and messages of current room to client, else send empty arrays for users and messages)
+	const obj = rooms.has(roomId)
+		? {
+			users: [...rooms.get(roomId).get('users').values()],
+			messages: [...rooms.get(roomId).get('messages').values()],
+		}
+		: { users: [], messages: [] };
 	res.json(obj);
 });
 
 app.post('/rooms', (req, res) => {
-	const {roomId, userName} = req.body;
+	const { roomId, userName } = req.body;
 	if (!rooms.has(roomId)) {
-		// create new room with its users and messages and set it to rooms collection
-		rooms.set(roomId, new Map([
-			['users', new Map()],
-			['messages', []],
-		])
+		// create new room with existing users and messages and set it to rooms collection
+		rooms.set(
+			roomId,
+			new Map([
+				['users', new Map()],
+				['messages', []],
+			]),
 		);
 	}
 	res.send();
-})
+});
 
-// when user connects we get new variable socket that will store all user info
+// when user connected we get new variable socket that will store all user info
 io.on('connection', (socket) => {
 	socket.on('ROOM:JOIN', ({ roomId, userName }) => {
-		// connect to a room with respective roomId
+		// connect to the room with respective roomId
 		socket.join(roomId);
 		// save current user to 'users' in current room
 		rooms.get(roomId).get('users').set(socket.id, userName);
@@ -57,32 +50,29 @@ io.on('connection', (socket) => {
 		const users = [...rooms.get(roomId).get('users').values()];
 		// send socket request to all users in current room showing all users in current room
 		io.in(roomId).emit('ROOM:SET_USERS', users);
-	})
+	});
 
-	socket.on('ROOM:NEW MESSAGE', ({ roomId, userName, text }) => {
+	socket.on('ROOM:NEW_MESSAGE', ({ roomId, userName, text }) => {
 		const obj = {
 			userName,
 			text,
 		};
 		// add current messages to 'messages' in current room
-		const messages = [...rooms.get(roomId).get('messages')]
-		messages.push(obj);
-		// send socket request to all users in current room (except for myself) showing new message in current room
-		io.in(rooms).emit('ROOM:NEW_MESSAGE', obj);
-	})
+		rooms.get(roomId).get('messages').push(obj);
+		// send socket request to all users in current room (except for sender) showing new message in current room
+		socket.broadcast.emit('ROOM:NEW_MESSAGE', obj);
+	});
 
 	socket.on('disconnect', () => {
 		rooms.forEach((value, roomId) => {
 			// check if user was deleted
-			if(value.get('users').delete(socket.id)) {
+			if (value.get('users').delete(socket.id)) {
 				const users = [...value.get('users').values()];
-				// send socket request to all users in current room (except for yourself) and show all users in current room
+				// send socket request to all users in current room and show all users in current room
 				io.in(roomId).emit('ROOM:SET_USERS', users);
 			}
 		});
-	})
-
-	console.log('user connected', socket.id);
+	});
 });
 
 server.listen(9999, (err) => {
@@ -90,4 +80,4 @@ server.listen(9999, (err) => {
 		throw Error(err);
 	}
 	console.log('Server started');
-})
+});
