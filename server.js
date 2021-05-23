@@ -1,4 +1,5 @@
 const express = require('express');
+const { isNullOrUndefined } = require('util');
 
 const app = express();
 const server = require('http').createServer(app);
@@ -27,7 +28,7 @@ app.get('/rooms/:id', (req, res) => {
 	// if there's some users and messages (roomId is present in 'rooms') then send users and messages of current room to client, else send empty arrays for users and messages)
 	const obj = rooms.has(roomId) ? {
 		users: [...rooms.get(roomId).get('users').values()],
-		messages: [...rooms.get(roomId).get('messages').values()]
+		messages: [...rooms.get(roomId).get('messages')]
 	} : { users: [], messages: []}
 	res.json(obj);
 });
@@ -55,8 +56,8 @@ io.on('connection', (socket) => {
 		// get names of all users
 		const users = [...rooms.get(roomId).get('users').values()];
 		// send socket request to all users in current room showing all users in current room
-		socket.to(roomId).broadcast.emit('ROOM: SET_USERS', users);
-	});
+		io.in(roomId).emit('ROOM:SET_USERS', users);
+	})
 
 	socket.on('ROOM:NEW MESSAGE', ({ roomId, userName, text }) => {
 		const obj = {
@@ -64,10 +65,11 @@ io.on('connection', (socket) => {
 			text,
 		};
 		// add current messages to 'messages' in current room
-		rooms.get(roomId).get('messages').push(obj);
+		const messages = [...rooms.get(roomId).get('messages')]
+		messages.push(obj);
 		// send socket request to all users in current room (except for myself) showing new message in current room
-		socket.to(roomId).broadcast.emit('ROOM:NEW MESSAGE', obj);
-	});
+		io.in(rooms).emit('ROOM:NEW_MESSAGE', obj);
+	})
 
 	socket.on('disconnect', () => {
 		rooms.forEach((value, roomId) => {
@@ -75,14 +77,13 @@ io.on('connection', (socket) => {
 			if(value.get('users').delete(socket.id)) {
 				const users = [...value.get('users').values()];
 				// send socket request to all users in current room (except for yourself) and show all users in current room
-				socket.to(roomId).broadcast.emit('ROOM:SET_USERS', users);
+				io.in(roomId).emit('ROOM:SET_USERS', users);
 			}
 		});
 	})
 
 	console.log('user connected', socket.id);
 });
-
 
 server.listen(9999, (err) => {
 	if (err) {

@@ -4,15 +4,15 @@ export default (state, action) => {
 			return {
 				...state,
 				joined: true,
-				userName: action.payload.userName,
-				roomId: action.payload.roomId,
+				userName: action.payload['userName'],
+				roomId: action.payload['roomId'],
 			};
 
 		case 'SET_DATA':
 			return {
 				...state,
-				users: action.payload.users,
-				messages: action.payload.messages,
+				users: action.payload['users'],
+				messages: action.payload['messages'],
 			};
 
 		case 'SET_USERS':
@@ -24,7 +24,7 @@ export default (state, action) => {
 		case 'NEW_MESSAGE':
 			return {
 				...state,
-				messages: [...state.messages, action.payload],
+				messages: [...state['messages'], action.payload],
 			};
 
 		default:

@@ -17,7 +17,6 @@ import Chat from './components/Chat.jsx';
     });
 
     const onLogin = async (obj) => {
-      // 
       dispatch({
         type: 'JOINED',
         payload: obj,
@@ -25,7 +24,7 @@ import Chat from './components/Chat.jsx';
       // send socket request to server and connect to room
       socket.emit('ROOM:JOIN', obj);
       // when connected to socket room, send http get request for users and messages in current room
-      const { data } = await axios.get(`/rooms/${obj.roomid}`);
+      const { data } = await axios.get(`/rooms/${obj['roomId']}`);
       dispatch({
         type: 'SET_DATA',
         payload: data,
@@ -39,7 +38,7 @@ import Chat from './components/Chat.jsx';
       });
     };
 
-    const addMessage =(message) => {
+    const addMessage = (message) => {
       dispatch({
         type: 'NEW_MESSAGE',
         payload: message
