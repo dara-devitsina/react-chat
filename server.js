@@ -2,7 +2,7 @@ const express = require('express');
 
 const app = express();
 const server = require('http').createServer(app);
-// connect socket with server
+// connect socket to server
 const io = require('socket.io')(server, {
     cors: {
         origin: '*',
@@ -33,7 +33,7 @@ app.get('/rooms/:id', (req, res) => {
 });
 
 app.post('/rooms', (req, res) => {
-	const {roomId} = req.body;
+	const {roomId, userName} = req.body;
 	if (!rooms.has(roomId)) {
 		// create new room with its users and messages and set it to rooms collection
 		rooms.set(roomId, new Map([
@@ -47,7 +47,7 @@ app.post('/rooms', (req, res) => {
 
 // when user connects we get new variable socket that will store all user info
 io.on('connection', (socket) => {
-	socket.on('ROOM: JOIN', ({ roomId, userName }) => {
+	socket.on('ROOM:JOIN', ({ roomId, userName }) => {
 		// connect to a room with respective roomId
 		socket.join(roomId);
 		// save current user to 'users' in current room
@@ -58,24 +58,24 @@ io.on('connection', (socket) => {
 		socket.to(roomId).broadcast.emit('ROOM: SET_USERS', users);
 	});
 
-	socket.on('ROOM: NEW MESSAGE', ({ roomId, userName, text }) => {
+	socket.on('ROOM:NEW MESSAGE', ({ roomId, userName, text }) => {
 		const obj = {
 			userName,
-			text
+			text,
 		};
 		// add current messages to 'messages' in current room
 		rooms.get(roomId).get('messages').push(obj);
 		// send socket request to all users in current room (except for myself) showing new message in current room
-		socket.to(roomId).broadcast.emit('ROOM: NEW MESSAGE', users);
+		socket.to(roomId).broadcast.emit('ROOM:NEW MESSAGE', obj);
 	});
 
 	socket.on('disconnect', () => {
 		rooms.forEach((value, roomId) => {
 			// check if user was deleted
-			if(value.get('users'.delete(socket.id))) {
-				const users = [...value.get(roomId).get('users').values()];
+			if(value.get('users').delete(socket.id)) {
+				const users = [...value.get('users').values()];
 				// send socket request to all users in current room (except for yourself) and show all users in current room
-				socket.to(roomId).broadcast.emit('ROOM: SET_USERS', users);
+				socket.to(roomId).broadcast.emit('ROOM:SET_USERS', users);
 			}
 		});
 	})
@@ -90,4 +90,3 @@ server.listen(9999, (err) => {
 	}
 	console.log('Server started');
 })
-

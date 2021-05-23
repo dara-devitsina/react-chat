@@ -1,11 +1,11 @@
 import React from 'react';
-// socket variable tranmits socket request from client to backend
-import socket from './socket';
+// socket variable transmits socket request from client to backend
+import socket from './socket.js';
 import axios from 'axios';
 
 import reducer from './reducer.js';
-import JoinBlock from './components/JoinBlock';
-import Chat from './components/Chat';
+import JoinBlock from './components/JoinBlock.jsx';
+import Chat from './components/Chat.jsx';
 
   function App() {
     const [state, dispatch] = React.useReducer(reducer, {
@@ -23,7 +23,7 @@ import Chat from './components/Chat';
         payload: obj,
       });
       // send socket request to server and connect to room
-      socket.emit('ROOM: JOIN', obj);
+      socket.emit('ROOM:JOIN', obj);
       // when connected to socket room, send http get request for users and messages in current room
       const { data } = await axios.get(`/rooms/${obj.roomid}`);
       dispatch({
@@ -36,20 +36,20 @@ import Chat from './components/Chat';
       dispatch({
         type: 'SET_USERS',
         payload: users,
-      })
-    }
+      });
+    };
 
     const addMessage =(message) => {
       dispatch({
         type: 'NEW_MESSAGE',
         payload: message
-      })
-    }
+      });
+    };
 
     // create new user once
     React.useEffect(() => {
-      socket.on('ROOM: SET_USERS', setUsers);
-      socket.on('ROOM: NEW_MESSAGE', addMessage);
+      socket.on('ROOM:SET_USERS', setUsers);
+      socket.on('ROOM:NEW_MESSAGE', addMessage);
     },[]);
 
     window.socket = socket;
